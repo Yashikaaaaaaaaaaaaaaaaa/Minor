@@ -7,7 +7,14 @@ import io
 from model import AlexNet  # Your model class
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+
+# ✅ Allow both localhost (for testing) and your deployed Vercel frontend
+CORS(app, resources={
+    r"/*": {"origins": [
+        "https://minor-cyan.vercel.app",
+        "http://localhost:3000"
+    ]}
+})
 
 # ✅ Load model
 loaded_model = AlexNet()
