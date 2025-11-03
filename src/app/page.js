@@ -12,6 +12,12 @@ export default function Page() {
   const [doctors, setDoctors] = useState([]);
   const [locationDenied, setLocationDenied] = useState(false);
 
+  // 🌐 Dynamically choose backend URL
+  const BACKEND_URL =
+    process.env.NODE_ENV === "development"
+      ? "http://127.0.0.1:5000/predict"
+      : "https://minorrr.onrender.com/predict";
+
   // Handle file change
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -44,22 +50,19 @@ export default function Page() {
     }
   };
 
-  // Fetch nearby doctors using OpenStreetMap Nominatim
- // 🔍 Fetch nearby pulmonologists using OpenStreetMap Nominatim
-const fetchNearbyDoctors = async (lat, lon) => {
-  try {
-    // 'pulmonologist' query for more accurate results
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=pulmonologist&addressdetails=1&limit=6&countrycodes=in&viewbox=${lon - 0.05},${lat + 0.05},${lon + 0.05},${lat - 0.05}&bounded=1`
-    );
-    const data = await response.json();
-    console.log("✅ Nearby pulmonologists:", data);
-    setDoctors(data);
-  } catch (error) {
-    console.error("Error fetching nearby pulmonologists:", error);
-  }
-};
-
+  // 🔍 Fetch nearby pulmonologists using OpenStreetMap Nominatim
+  const fetchNearbyDoctors = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=pulmonologist&addressdetails=1&limit=6&countrycodes=in&viewbox=${lon - 0.05},${lat + 0.05},${lon + 0.05},${lat - 0.05}&bounded=1`
+      );
+      const data = await response.json();
+      console.log("✅ Nearby pulmonologists:", data);
+      setDoctors(data);
+    } catch (error) {
+      console.error("Error fetching nearby pulmonologists:", error);
+    }
+  };
 
   // Trigger doctor fetching when location is set after pneumonia detection
   useEffect(() => {
@@ -94,10 +97,14 @@ const fetchNearbyDoctors = async (lat, lon) => {
     formData.append("image", selectedFile);
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/predict", {
+      const response = await fetch(BACKEND_URL, {
         method: "POST",
         body: formData,
       });
+
+      if (!response.ok) {
+        throw new Error("Prediction request failed.");
+      }
 
       const data = await response.json();
       setResult(data);
@@ -113,6 +120,7 @@ const fetchNearbyDoctors = async (lat, lon) => {
       }
     } catch (error) {
       console.error("Error:", error);
+      alert("⚠️ Error: Unable to get prediction. Please try again!");
     } finally {
       clearInterval(interval);
       setLoading(false);
@@ -254,62 +262,61 @@ const fetchNearbyDoctors = async (lat, lon) => {
               </p>
             )}
 
-            
-
             {/* Nearby Doctors Section */}
-<div className="mt-6 w-full">
-  {/* Searching Message */}
-  {result.prediction?.toLowerCase().includes("pneumonia") &&
-    location &&
-    doctors.length === 0 &&
-    !loading && (
-      <div className="flex items-center justify-center gap-2 bg-white/40 backdrop-blur-md rounded-xl p-3 shadow-inner border border-white/30 animate-pulse">
-        <svg
-          className="w-5 h-5 text-blue-600 animate-spin"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 4v4m0 8v4m8-8h-4m-8 0H4"
-          />
-        </svg>
-        <p className="text-sm text-gray-700 font-medium">
-          Searching for nearby doctors...
-        </p>
-      </div>
-    )}
+            <div className="mt-6 w-full">
+              {result.prediction?.toLowerCase().includes("pneumonia") &&
+                location &&
+                doctors.length === 0 &&
+                !loading && (
+                  <div className="flex items-center justify-center gap-2 bg-white/40 backdrop-blur-md rounded-xl p-3 shadow-inner border border-white/30 animate-pulse">
+                    <svg
+                      className="w-5 h-5 text-blue-600 animate-spin"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M12 4v4m0 8v4m8-8h-4m-8 0H4"
+                      />
+                    </svg>
+                    <p className="text-sm text-gray-700 font-medium">
+                      Searching for nearby doctors...
+                    </p>
+                  </div>
+                )}
 
-  {/* Nearby Doctors Found */}
-  {doctors.length > 0 && (
-    <div className="mt-5 bg-white/40 backdrop-blur-lg rounded-2xl p-4 border border-white/30 shadow-lg transition-all duration-300 hover:shadow-xl">
-      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-        <span className="text-blue-600 text-align: center"></span> Nearby Doctors & Clinics
-      </h3>
-      <ul className="space-y-3">
-        {doctors.map((doc, i) => (
-          <li
-            key={i}
-            className="bg-white/70 backdrop-blur-sm border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300"
-          >
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-800">
-                {doc.display_name.split(",")[0]}
-              </span>
-              <span className="text-xs text-gray-600 mt-1">
-                {doc.display_name.split(",").slice(1, 3).join(", ")}
-              </span>
+              {doctors.length > 0 && (
+                <div className="mt-5 bg-white/40 backdrop-blur-lg rounded-2xl p-4 border border-white/30 shadow-lg transition-all duration-300 hover:shadow-xl">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="text-blue-600"></span> Nearby Doctors &
+                    Clinics
+                  </h3>
+                  <ul className="space-y-3">
+                    {doctors.map((doc, i) => (
+                      <li
+                        key={i}
+                        className="bg-white/70 backdrop-blur-sm border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-300"
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-800">
+                            {doc.display_name.split(",")[0]}
+                          </span>
+                          <span className="text-xs text-gray-600 mt-1">
+                            {doc.display_name
+                              .split(",")
+                              .slice(1, 3)
+                              .join(", ")}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )}
-</div>
-
           </div>
         )}
       </div>
