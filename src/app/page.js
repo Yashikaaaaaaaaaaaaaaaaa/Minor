@@ -12,11 +12,9 @@ export default function Page() {
   const [doctors, setDoctors] = useState([]);
   const [locationDenied, setLocationDenied] = useState(false);
 
-  // 🌐 Dynamically choose backend URL
-  const BACKEND_URL =
-    process.env.NODE_ENV === "development"
-      ? "http://127.0.0.1:5000/predict"
-      : "https://minorrr.onrender.com/predict";
+ const BACKEND_URL = "https://backendpneumo.onrender.com/predict";
+
+
 
   // Handle file change
   const handleFileChange = (e) => {
@@ -291,8 +289,7 @@ export default function Page() {
               {doctors.length > 0 && (
                 <div className="mt-5 bg-white/40 backdrop-blur-lg rounded-2xl p-4 border border-white/30 shadow-lg transition-all duration-300 hover:shadow-xl">
                   <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <span className="text-blue-600"></span> Nearby Doctors &
-                    Clinics
+                    Nearby Doctors & Clinics
                   </h3>
                   <ul className="space-y-3">
                     {doctors.map((doc, i) => (
